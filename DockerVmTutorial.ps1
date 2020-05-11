@@ -1,5 +1,5 @@
 # Variables for common values
-$resourceGroup = "tutorialResources"
+$resourceGroup = "lcolab"
 $location = "eastus"
 $vmName = "dockerVm"
 
@@ -8,7 +8,7 @@ $securePassword = ConvertTo-SecureString ' ' -AsPlainText -Force
 $cred = New-Object System.Management.Automation.PSCredential ("azureuser", $securePassword)
 
 # Create a resource group
-New-AzResourceGroup -Name $resourceGroup -Location $location
+#New-AzResourceGroup -Name $resourceGroup -Location $location
 
 # Create a subnet configuration
 $subnetConfig = New-AzVirtualNetworkSubnetConfig -Name mySubnet -AddressPrefix 192.168.1.0/24
@@ -88,7 +88,8 @@ $vmConfig = New-AzVMConfig -VMName $vmName -VMSize Standard_D1 |
             Add-AzVMNetworkInterface -Id $nic.Id
 
 # Configure SSH Keys
-$sshPublicKey = Get-Content "$env:USERPROFILE\.ssh\id_rsa.pub"
+$sshPublicKey = Get-Content ~/.ssh/id_rsa.pub
+#$sshPublicKey = Get-Content "$env:USERPROFILE\.ssh\id_rsa.pub"
 Add-AzVMSshPublicKey -VM $vmConfig -KeyData $sshPublicKey -Path "/home/azureuser/.ssh/authorized_keys"
 
 # Create a virtual machine
@@ -97,6 +98,7 @@ New-AzVM -ResourceGroupName $resourceGroup -Location $location -VM $vmConfig
 # Install Docker and run container
 $PublicSettings = '{"docker": {"port": "2375"},"compose": {"web": {"image": "nginx","ports": ["80:80"]}}}'
 
+<#
 $azVmExtensionParams = @{
     ExtensionName       = 'Docker'
     ResourceGroupName   = $resourceGroup
@@ -108,3 +110,8 @@ $azVmExtensionParams = @{
     Location            = $location
 }
 Set-AzVMExtension @azVmExtensionParams
+#>
+
+Set-AzVMExtension -ExtensionName "Docker" -ResourceGroupName $resourceGroup -VMName $vmName `
+  -Publisher "Microsoft.Azure.Extensions" -ExtensionType "DockerExtension" -TypeHandlerVersion 1.0 `
+  -SettingString $PublicSettings -Location $location
